@@ -27,7 +27,7 @@ FPS = 60
 
 def draw_intersection(surface):
   # Teken de achtergrond
-  surface.fill((40, 120, 60))  - Grasgroen
+  surface.fill((40, 120, 60))  
 
   # Horizontale weg
   pygame.draw.rect(
