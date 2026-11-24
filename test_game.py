@@ -551,7 +551,7 @@ class RhythmTests(unittest.TestCase):
         with patch("index.pygame.time.get_ticks", return_value=1214):
             game.press_light("E")
 
-        self.assertEqual(game.score, 100)
+        self.assertEqual(game.score, 150)
         self.assertEqual(game.mistakes, 0)
         self.assertEqual(game.beat_manager.bpm, 140)
         self.assertEqual(game.rhythm_manager.bpm, 140)
@@ -1114,9 +1114,9 @@ class RhythmTests(unittest.TestCase):
             game.press_light("E")
         self.assertEqual(game.lights["E"].state, "GREEN")
         self.assertEqual(game.control_direction, "E")
-        self.assertEqual(game.score, 0)
+        self.assertEqual(game.score, 50)
         self.assertEqual(game.mistakes, 0)
-        self.assertEqual(game.rhythm_feedback, "")
+        self.assertEqual(game.rhythm_feedback, "+50 OFF BEAT")
         self.assertIn("E", game.served_lanes)
 
     def test_multiple_lane_inputs_work_in_one_beat_and_off_beat(self):
@@ -1149,7 +1149,7 @@ class RhythmTests(unittest.TestCase):
         ):
             game.press_light("N")
         self.assertEqual(game.lights["N"].state, "GREEN")
-        self.assertEqual(game.score, 200)
+        self.assertEqual(game.score, 250)
         self.assertEqual(game.mistakes, 0)
 
     def test_off_beat_inputs_never_cause_penalties_or_game_over(self):
@@ -1172,7 +1172,7 @@ class RhythmTests(unittest.TestCase):
                 game.press_light(direction)
 
         self.assertEqual(game.mistakes, 0)
-        self.assertEqual(game.score, 0)
+        self.assertEqual(game.score, 600)
         self.assertEqual(game.state, "PLAYING")
         self.assertTrue(all(light.state in ("GREEN", "YELLOW") for light in game.lights.values()))
 
@@ -1202,8 +1202,8 @@ class RhythmTests(unittest.TestCase):
         game.lights["E"].is_green = False
         game.update_lane_patience(True)
 
-        self.assertEqual(game.lane_wait_beats["E"], 5)
-        self.assertEqual(game.lane_patience["E"], 50)
+        self.assertEqual(game.lane_wait_beats["E"], 4)
+        self.assertEqual(game.lane_patience["E"], 40)
 
     def test_high_patience_slows_vehicle_motion(self):
         regular = Vehicle("W")

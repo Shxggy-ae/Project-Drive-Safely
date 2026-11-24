@@ -39,10 +39,12 @@ Selecteer in VS Code `.venv\Scripts\python.exe` als Python-interpreter.
   moment elke rij openen. De geel gemarkeerde rij is slechts een optionele
   suggestie, geen verplichte invoer. Het verkeer volgt de beatgrid, met maximaal
   twee auto's per beat zodat snelle nummers beheersbaar blijven.
-- **Ritmescore:** elke rij-invoer binnen het beatvenster geeft 100 punten en
-  bouwt je on-beat-streak op. Een on-beat-activatie vermindert de wachttijd van
-  die rij met een extra beat. Buiten het beatvenster krijg je geen bonus, maar
-  de rij opent gewoon en er is geen straf of rhythm-misser. Het venster is
+- **Ritmescore:** elke rij-invoer geeft 50 punten; binnen het beatvenster zijn
+  dat 100 punten en bouw je je on-beat-streak op. Een on-beat-activatie
+  vermindert de wachttijd van die rij met vier beats in plaats van twee, zodat
+  je duidelijk meer tijd krijgt voordat bestuurders ongeduldig worden. Buiten
+  het beatvenster opent de rij ook gewoon en is er geen straf of rhythm-misser.
+  Het venster is
   maximaal 400 ms aan weerszijden van de beat en wordt smaller bij een hoog
   tempo, zodat aangrenzende beats niet overlappen. Voltooi de track voor 1000
   bonuspunten. De beatrail toont beats die over 900 ms naar de hitlijn bewegen;
@@ -67,7 +69,7 @@ Selecteer in VS Code `.venv\Scripts\python.exe` als Python-interpreter.
   De zijbalk toont de aantallen per rij en de eerstvolgende auto's met hun
   rijrichting en aankomsttijd.
 - **Patience:** wordt per beat bijgewerkt. Een bediende rij verliest twee
-  wachttijden, of drie na een on-beat-activatie; een actieve groene rij met
+  wachttijden, of vier na een on-beat-activatie; een actieve groene rij met
   verkeer verliest er twee. Wachtende auto's bij rood verhogen de wachttijd,
   bewegende auto's verlagen die. Zonder auto's wordt de patience direct
   gereset. Bij 90% wordt het licht geel; bij 100% eindigt het spel. Vanaf 50%

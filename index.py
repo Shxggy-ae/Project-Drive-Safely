@@ -26,6 +26,7 @@ FPS = 60
 BEAT_INPUT_WINDOW_MS = 400
 MAX_RHYTHM_BPM = MAX_TRAFFIC_BPM
 ON_BEAT_SCORE = 100
+OFF_BEAT_SCORE = 50
 COMPLETION_BONUS = 1000
 MIN_GREEN_BEATS = 3
 GREEN_CLEARANCE_BUFFER_MS = 300
@@ -1314,23 +1315,25 @@ class Game:
         beat_time = self.rhythm_manager.nearest_beat_time(current_time)
         offset_ms = current_time - beat_time
         window_ms = self.rhythm_manager.input_window_ms(beat_time)
-        if abs(offset_ms) <= window_ms:
-            self.score += ON_BEAT_SCORE
+        on_beat = abs(offset_ms) <= window_ms
+        points = ON_BEAT_SCORE if on_beat else OFF_BEAT_SCORE
+        self.score += points
+        self.score_popup = f"+{points}"
+        self.score_popup_until = current_time + 1200
+        if on_beat:
             self.on_beat_streak = getattr(self, "on_beat_streak", 0) + 1
             self.rhythm_feedback = (
                 f"+{ON_BEAT_SCORE} ON BEAT  STREAK x{self.on_beat_streak}"
             )
-            self.score_popup = "+100"
-            self.score_popup_until = current_time + 1200
         else:
             self.on_beat_streak = 0
-            self.rhythm_feedback = ""
+            self.rhythm_feedback = f"+{OFF_BEAT_SCORE} OFF BEAT"
         self.rhythm_feedback_until = (
-            current_time + 1200 if abs(offset_ms) <= window_ms else 0
+            current_time + 1200
         )
 
         self.activate_lane(direction)
-        if abs(offset_ms) <= window_ms:
+        if on_beat:
             on_beat_lanes = getattr(self, "on_beat_served_lanes", set())
             on_beat_lanes.add(direction)
             self.on_beat_served_lanes = on_beat_lanes
@@ -1457,7 +1460,7 @@ class Game:
                     break
 
             if direction in served_lanes:
-                relief = 3 if direction in getattr(
+                relief = 4 if direction in getattr(
                     self,
                     "on_beat_served_lanes",
                     set(),
