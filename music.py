@@ -318,9 +318,16 @@ def analyze_track(sound, subdivision=1, min_intensity=0.32):
     else:
         traffic_tempo_events = source_events
 
+    traffic_tempo_events = _fill_traffic_gaps(
+        traffic_tempo_events,
+        bpm,
+        offset,
+        duration,
+    )
+
     events = []
     for event in traffic_tempo_events:
-        queue_size = 2 if event.intensity >= 0.85 else 1
+        queue_size = 2 if event.intensity >= 0.75 else 1
         hold_id = None
         hold_end = None
         for section_index, (start, end) in enumerate(sustained_sections):
@@ -355,6 +362,53 @@ def analyze_track(sound, subdivision=1, min_intensity=0.32):
 def _regular_beat_times(duration, bpm):
     interval = 60 / bpm
     return [beat * interval for beat in range(math.ceil(duration / interval))]
+
+
+def _fill_traffic_gaps(events, bpm, offset, duration):
+    fallback_step = 60.0 / min(bpm, MAX_TRAFFIC_BPM)
+    max_gap = fallback_step * 1.5
+    events = sorted(events, key=lambda event: event.time)
+    fallback_times = [
+        offset + beat * fallback_step
+        for beat in range(max(0, math.ceil((duration - offset) / fallback_step)))
+        if offset + beat * fallback_step < duration
+    ]
+
+    if not events:
+        return [BeatEvent(time, 0.55) for time in fallback_times]
+
+    filled_events = list(events)
+    event_index = 0
+    for time in fallback_times:
+        while (
+            event_index + 1 < len(events)
+            and events[event_index + 1].time < time
+        ):
+            event_index += 1
+
+        if (
+            time == events[event_index].time
+            or (
+                event_index + 1 < len(events)
+                and time == events[event_index + 1].time
+            )
+        ):
+            continue
+
+        if time < events[0].time:
+            gap_is_long = events[0].time > max_gap
+        elif time > events[-1].time:
+            gap_is_long = duration - events[-1].time > max_gap
+        else:
+            gap_is_long = (
+                events[event_index].time < time < events[event_index + 1].time
+                and events[event_index + 1].time - events[event_index].time > max_gap
+            )
+
+        if gap_is_long:
+            filled_events.append(BeatEvent(time, 0.55))
+
+    return sorted(filled_events, key=lambda event: event.time)
 
 
 def _find_sustained_sections(energies, window_duration):

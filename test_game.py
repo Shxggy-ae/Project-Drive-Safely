@@ -14,6 +14,7 @@ from index import BeatManager, Game, PRESET_LEVELS, Vehicle
 from music import (
     BeatEvent,
     _estimate_bpm_and_offset,
+    _fill_traffic_gaps,
     analyze_track,
     analyze_upcoming_section,
     extract_waveform,
@@ -60,6 +61,40 @@ class RhythmTests(unittest.TestCase):
             with open(game.leaderboard_file, "r", encoding="utf-8") as score_file:
                 self.assertEqual(score_file.read().strip(), "AB12Z|1250|Test")
 
+    def test_leaderboard_save_failure_preserves_file_and_can_be_retried(self):
+        game = Game.__new__(Game)
+        game.score_saved = False
+        game.player_name = "NEW"
+        game.score = 1000
+        game.track_name = "New track"
+        game.leaderboard = [("OLD", 500, "Old track")]
+        statuses = []
+        game.show_status = statuses.append
+
+        with tempfile.TemporaryDirectory() as directory:
+            game.leaderboard_file = os.path.join(directory, "leaderboard.txt")
+            with open(game.leaderboard_file, "w", encoding="utf-8") as score_file:
+                score_file.write("OLD|500|Old track\n")
+
+            with patch("index.os.replace", side_effect=OSError("file is locked")):
+                game.save_leaderboard_entry()
+
+            self.assertFalse(game.score_saved)
+            self.assertEqual(game.leaderboard, [("OLD", 500, "Old track")])
+            with open(game.leaderboard_file, "r", encoding="utf-8") as score_file:
+                self.assertEqual(score_file.read(), "OLD|500|Old track\n")
+            self.assertEqual(os.listdir(directory), ["leaderboard.txt"])
+            self.assertTrue(statuses)
+
+            game.save_leaderboard_entry()
+
+            with open(game.leaderboard_file, "r", encoding="utf-8") as score_file:
+                self.assertEqual(
+                    score_file.read(),
+                    "NEW|1000|New track\nOLD|500|Old track\n",
+                )
+            self.assertTrue(game.score_saved)
+
     def test_story_preset_uses_full_tempo_and_has_a_hold_section(self):
         events = make_preset_events(140, 30, "normal")
         self.assertAlmostEqual(events[1].time - events[0].time, 60 / 140)
@@ -96,6 +131,49 @@ class RhythmTests(unittest.TestCase):
 
         self.assertEqual(bpm, 160)
         self.assertAlmostEqual(events[1].time - events[0].time, 60 / 160, delta=0.01)
+
+    def test_sparse_traffic_events_are_filled_on_the_estimated_bpm_grid(self):
+        detected_events = [
+            BeatEvent(0.1, 0.8, queue_size=2),
+            BeatEvent(1.6, 0.9, queue_size=2),
+        ]
+
+        events = _fill_traffic_gaps(detected_events, 120, 0.1, 2.2)
+
+        self.assertEqual(
+            [event.time for event in events],
+            [0.1, 0.6, 1.1, 1.6],
+        )
+        self.assertIs(events[0], detected_events[0])
+        self.assertIs(events[-1], detected_events[-1])
+        self.assertEqual([event.intensity for event in events[1:3]], [0.55, 0.55])
+
+        close_events = [BeatEvent(0.1, 0.8), BeatEvent(0.6, 0.9)]
+        short_gap = _fill_traffic_gaps(close_events, 120, 0.1, 1.1)
+        self.assertEqual(short_gap, close_events)
+
+    def test_detected_events_at_point_eight_intensity_use_two_car_queues(self):
+        sample_rate = 22050
+        duration = 6
+        samples = array("h", [0]) * (sample_rate * duration)
+        for beat in range(12):
+            start = round(beat * 0.5 * sample_rate)
+            amplitude = 10_000 if beat % 2 == 0 else 8_000
+            for offset in range(round(sample_rate * 0.05)):
+                samples[start + offset] = int(
+                    amplitude * math.sin(2 * math.pi * 900 * offset / sample_rate)
+                )
+
+        events, _, _, _, _ = analyze_track(
+            pygame.mixer.Sound(buffer=samples.tobytes())
+        )
+
+        self.assertTrue(
+            any(
+                0.75 <= event.intensity < 0.85 and event.queue_size == 2
+                for event in events
+            )
+        )
 
     def test_bpm_estimation_aligns_the_beat_grid_to_peak_phase(self):
         bpm, offset = _estimate_bpm_and_offset(
@@ -601,7 +679,7 @@ class RhythmTests(unittest.TestCase):
         self.assertGreaterEqual(len(events), 8)
         self.assertAlmostEqual(bpm, 140, delta=5)
         self.assertAlmostEqual(rhythm_bpm, 140, delta=5)
-        self.assertGreaterEqual(len(rhythm_events), len(events))
+        self.assertTrue(any(event.time > rhythm_events[-1].time for event in events))
         self.assertFalse(used_fallback)
 
     def test_audio_analysis_marks_a_sustained_section(self):

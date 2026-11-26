@@ -1,10 +1,2 @@
-TOMMY|6200|Lil Uzi Vert - Neon Guts
-PLAYW|4350|Lil Uzi Vert - Neon Guts
-TOMMY|3650|Wait a Minute!
-TOMMY|3100|Lil Uzi Vert & 21 Savage
-PLAY|2400|Lil Uzi Vert - Neon Guts
-TOMMY|2300|Lil Uzi Vert & 21 Savage
-PLAY|2250|Lil Uzi Vert - Neon Guts
-TOMMY|2100|Wait a Minute!
-PLAYS|1600|Lil Uzi Vert - Neon Guts
-TOMMY|1600|Homecoming.mp3
+TOMMY|3700|Lil Uzi Vert - Neon Guts
+PLAY|1750|Playboi Carti - On That 

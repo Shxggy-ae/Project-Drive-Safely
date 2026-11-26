@@ -3,6 +3,7 @@ import sys
 import random
 import math
 import os
+import tempfile
 import tkinter as tk
 from array import array
 from tkinter import filedialog
@@ -841,13 +842,36 @@ class Game:
         entries = list(getattr(self, "leaderboard", []))
         entries.append((name, max(0, self.score), self.track_name[:24]))
         entries.sort(key=lambda entry: entry[1], reverse=True)
-        self.leaderboard = entries[:10]
+        entries = entries[:10]
+        temporary_path = None
         try:
-            with open(self.leaderboard_file, "w", encoding="utf-8") as score_file:
-                for entry_name, entry_score, entry_track in self.leaderboard:
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=os.path.dirname(os.path.abspath(self.leaderboard_file)),
+                prefix=".leaderboard-",
+                suffix=".tmp",
+                delete=False,
+            ) as score_file:
+                temporary_path = score_file.name
+                for entry_name, entry_score, entry_track in entries:
                     score_file.write(f"{entry_name}|{entry_score}|{entry_track}\n")
+            os.replace(temporary_path, self.leaderboard_file)
         except OSError as error:
+            if temporary_path is not None:
+                try:
+                    os.remove(temporary_path)
+                except FileNotFoundError:
+                    pass
+                except OSError as cleanup_error:
+                    self.show_status(
+                        f"Leaderboard kon niet worden opgeslagen: {error}; "
+                        f"tijdelijk bestand kon niet worden verwijderd: {cleanup_error}"
+                    )
+                    return
             self.show_status(f"Leaderboard kon niet worden opgeslagen: {error}")
+            return
+        self.leaderboard = entries
         self.score_saved = True
 
     def finish_game(self, reason):
