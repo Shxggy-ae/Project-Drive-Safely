@@ -3,8 +3,7 @@
 ## Traffic Beat
 
 Een 2D-verkeersspel in Pygame met vier presetlevels, waaronder **Story** en
-drie bundled MP3-tracks, plus een Custom Mode voor MP3-bestanden. Story
-gebruikt origineel gegenereerde instrumentale audio van 60 seconden. De
+drie bundled MP3-tracks, plus een Custom Mode voor MP3-bestande. De
 MP3-ritme-inputs worden op een voorspelbare kwartnoot-grid uitgelijnd;
 verkeers-events zijn begrensd op 160 BPM. Lange
 muziekdelen maken een reeks auto's in
